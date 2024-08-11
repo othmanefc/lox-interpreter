@@ -1,19 +1,14 @@
+use strum_macros::Display;
+
+#[derive(Display)]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 enum TokenType {
     LeftParen,
     RightParen,
+    LeftBrace,
+    RightBrace,
     EOF,
     Unknown(String),
-}
-
-impl TokenType {
-    fn as_str(&self) -> &'static str {
-        match self {
-            TokenType::LeftParen => "LEFT_PAREN",
-            TokenType::RightParen => "RIGHT_PAREN",
-            TokenType::EOF => "EOF",
-            _ => panic!("not supported token_type"),
-        }
-    }
 }
 
 struct Token {
@@ -28,6 +23,8 @@ fn tokenize(line: &str) -> Vec<Token> {
         let token_type = match char {
             '(' => TokenType::LeftParen,
             ')' => TokenType::RightParen,
+            '{' => TokenType::LeftBrace,
+            '}' => TokenType::RightBrace,
             _ => TokenType::Unknown(char.into()),
         };
         tokens.push(Token {
@@ -43,14 +40,8 @@ fn tokenize(line: &str) -> Vec<Token> {
 
 fn print_tokens(tokens: &Vec<Token>) {
     for token in tokens.iter() {
-        match token.token_type {
-            TokenType::LeftParen | TokenType::RightParen | TokenType::EOF => {
-                println!("{} {} null", token.token_type.as_str(), token.lexeme)
-            }
-            _ => panic!("Unknown token type"),
-        }
+        println!("{} {} null", token.token_type, token.lexeme);
     }
-
 }
 pub fn scanner(source: String) {
     let lines = source.lines();
