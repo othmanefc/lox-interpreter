@@ -38,6 +38,7 @@ enum TokenType {
     Unknown(String),
     Comment,
     Slash,
+    Blank,
 }
 
 struct Token {
@@ -114,6 +115,7 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                 TokenType::Slash,
                 '/',
             ),
+            ' ' | '\n' | '\t' => TokenType::Blank,
             _ => TokenType::Unknown(char.into()),
         };
 
@@ -154,6 +156,7 @@ fn print_tokens(tokens: &Vec<Token>) {
                 )
                 .unwrap()
             }
+            TokenType::Blank => (),
             _ => println!("{} {} null", token.token_type, token.lexeme),
         }
     }
