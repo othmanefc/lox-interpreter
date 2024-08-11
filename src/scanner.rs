@@ -4,7 +4,7 @@ use std::io::{self, Write};
 use std::process;
 use strum_macros::Display;
 
-#[derive(Display)]
+#[derive(Display, Clone)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 enum Operator {
     EqualEqual,
@@ -13,7 +13,7 @@ enum Operator {
     GreaterEqual,
 }
 
-#[derive(Display)]
+#[derive(Display, Clone)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 enum TokenType {
     RightParen,
@@ -137,18 +137,21 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                 }
             }
             char if char.is_digit(10) => {
-                let mut comma = false;
+                let mut has_decimal = false;
                 let mut num_as_string = String::from(char);
-                while let Some(new_char) = chars.peek() {
-                    if new_char.is_digit(10) {
-                        num_as_string.push(*new_char);
-                        chars.next();
-                    } else if *new_char == '.' && !comma {
-                        num_as_string.push(*new_char);
-                        comma = true;
-                        chars.next();
-                    } else {
-                        break;
+
+                while let Some(&next_char) = chars.peek() {
+                    match next_char {
+                        '0'..='9' => {
+                            num_as_string.push(next_char);
+                            chars.next();
+                        }
+                        '.' if !has_decimal => {
+                            num_as_string.push(next_char);
+                            has_decimal = true;
+                            chars.next();
+                        }
+                        _ => break,
                     }
                 }
                 TokenType::Number(num_as_string)
@@ -177,9 +180,18 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                 }
                 _ => char.into(),
             },
-            token_type,
+            token_type: token_type.clone(),
             line: line_number,
         });
+
+        match token_type {
+            TokenType::Number(num) if num.ends_with('.') => tokens.push(Token {
+                lexeme: '.'.into(),
+                token_type: TokenType::Dot,
+                line: line_number,
+            }),
+            _ => (),
+        }
     }
     tokens
 }
@@ -223,7 +235,7 @@ fn print_tokens(tokens: &Vec<Token>) {
                 println!(
                     "{} {} {}",
                     token.token_type,
-                    token.lexeme,
+                    token.lexeme.trim_end_matches('.'),
                     format_number_as_string(&token.lexeme)
                 )
             }
@@ -246,6 +258,8 @@ fn format_number_as_string(num_as_string: &String) -> String {
     let mut new_string = num_as_string.clone();
     if new_string.ends_with('.') {
         new_string.push('0')
+    } else if !new_string.contains('.') {
+        new_string.push_str(".0")
     }
     new_string
 }
