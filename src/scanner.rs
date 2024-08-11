@@ -39,6 +39,10 @@ enum TokenType {
     Comment,
     Slash,
     Blank,
+    String {
+        string: String,
+        finished: bool,
+    },
 }
 
 struct Token {
@@ -116,6 +120,21 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                 '/',
             ),
             ' ' | '\n' | '\t' => TokenType::Blank,
+            '"' => {
+                let mut finished = false;
+                let mut string_ = r#"""#.to_string();
+                while let Some(new_char) = chars.next() {
+                    string_.push(new_char);
+                    if new_char == '"' {
+                        finished = true;
+                        break;
+                    }
+                }
+                TokenType::String {
+                    string: string_,
+                    finished,
+                }
+            }
             _ => TokenType::Unknown(char.into()),
         };
 
@@ -124,8 +143,12 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
         }
 
         tokens.push(Token {
-            lexeme: match token_type {
+            lexeme: match &token_type {
                 TokenType::Unknown(_) => String::new(),
+                TokenType::String {
+                    string,
+                    finished: _,
+                } => string.clone(),
                 TokenType::Operator { op: _ } => {
                     let mut s = char.to_string();
                     if let Some(next_char) = chars.next() {
@@ -156,6 +179,27 @@ fn print_tokens(tokens: &Vec<Token>) {
                 )
                 .unwrap()
             }
+            TokenType::String {
+                string: _,
+                finished: false,
+            } => {
+                has_errored = true;
+                writeln!(
+                    io::stderr(),
+                    "[line {}] Error: Unterminated string.",
+                    token.line,
+                )
+                .unwrap()
+            }
+            TokenType::String {
+                string,
+                finished: true,
+            } => println!(
+                "{} {} {}",
+                token.token_type,
+                token.lexeme,
+                split_string(&string)
+            ),
             TokenType::Blank => (),
             _ => println!("{} {} null", token.token_type, token.lexeme),
         }
@@ -165,6 +209,17 @@ fn print_tokens(tokens: &Vec<Token>) {
         process::exit(65);
     }
 }
+
+fn split_string(to_split: &String) -> String {
+    let new_string = to_split.as_str();
+    new_string
+        .replace("\"", "")
+        .split(" ")
+        .map(String::from)
+        .collect::<Vec<String>>()
+        .join(" ")
+}
+
 pub fn scanner(source: String) {
     let lines = source.lines();
     let mut tokens = Vec::<Token>::new();
