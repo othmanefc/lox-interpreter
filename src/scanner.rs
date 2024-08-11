@@ -8,6 +8,9 @@ use strum_macros::Display;
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 enum Operator {
     EqualEqual,
+    BangEqual,
+    LessEqual,
+    GreaterEqual,
 }
 
 #[derive(Display)]
@@ -28,30 +31,12 @@ enum TokenType {
     Operator {
         op: Operator,
     },
+    Bang,
+    Less,
+    Greater,
     EOF,
     Unknown(String),
 }
-
-// impl fmt::Display for TokenType {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         match self {
-//             TokenType::Operator(op) => write!(f, "{}", op),
-//             TokenType::Unknown(unknown_str) => write!(f, "UNKNOWN({})", unknown_str),
-//             _ => panic!(""),
-//         }
-//     }
-// }
-// impl fmt::Display for TokenType {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         match self {
-//             TokenType::Operator(op) => {
-//                 write!(f, "{}", op.to_string().to_case(Case::ScreamingSnake))
-//             }
-//             TokenType::Unknown(s) => write!(f, "UNKNOWN({})", s),
-//             _ => write!(f, "{}", &self.to_string().to_case(Case::ScreamingSnake)),
-//         }
-//     }
-// }
 
 struct Token {
     token_type: TokenType,
@@ -95,6 +80,30 @@ fn tokenize(line: &str, line_number: usize) -> Vec<Token> {
                     op: Operator::EqualEqual,
                 },
                 TokenType::Equal,
+                '=',
+            ),
+            '!' => operators(
+                chars.peek().copied(),
+                TokenType::Operator {
+                    op: Operator::BangEqual,
+                },
+                TokenType::Bang,
+                '=',
+            ),
+            '<' => operators(
+                chars.peek().copied(),
+                TokenType::Operator {
+                    op: Operator::LessEqual,
+                },
+                TokenType::Less,
+                '=',
+            ),
+            '>' => operators(
+                chars.peek().copied(),
+                TokenType::Operator {
+                    op: Operator::GreaterEqual,
+                },
+                TokenType::Greater,
                 '=',
             ),
             _ => TokenType::Unknown(char.into()),
