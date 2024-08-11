@@ -16,8 +16,8 @@ enum Operator {
 #[derive(Display)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 enum TokenType {
-    LeftParen,
     RightParen,
+    LeftParen,
     LeftBrace,
     RightBrace,
     Star,
@@ -36,6 +36,8 @@ enum TokenType {
     Greater,
     EOF,
     Unknown(String),
+    Comment,
+    Slash,
 }
 
 struct Token {
@@ -58,7 +60,7 @@ fn operators(
     return simple_type;
 }
 
-fn tokenize(line: &str, line_number: usize) -> Vec<Token> {
+fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
     let mut tokens = Vec::<Token>::new();
     let mut chars = line.chars().peekable();
 
@@ -106,8 +108,19 @@ fn tokenize(line: &str, line_number: usize) -> Vec<Token> {
                 TokenType::Greater,
                 '=',
             ),
+            '/' => operators(
+                chars.peek().copied(),
+                TokenType::Comment,
+                TokenType::Slash,
+                '/',
+            ),
             _ => TokenType::Unknown(char.into()),
         };
+
+        if matches!(token_type, TokenType::Comment) {
+            return tokens;
+        }
+
         tokens.push(Token {
             lexeme: match token_type {
                 TokenType::Unknown(_) => String::new(),
@@ -155,7 +168,7 @@ pub fn scanner(source: String) {
     let mut lines_count = 0;
 
     for (i, line) in lines.enumerate() {
-        let mut line_tokens = tokenize(line, i + 1);
+        let mut line_tokens = tokenize_line(line, i + 1);
         tokens.append(&mut line_tokens);
         lines_count += 1;
     }
