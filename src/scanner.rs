@@ -43,6 +43,7 @@ enum TokenType {
         string: String,
         finished: bool,
     },
+    Number(String),
 }
 
 struct Token {
@@ -135,6 +136,23 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                     finished,
                 }
             }
+            char if char.is_digit(10) => {
+                let mut comma = false;
+                let mut num_as_string = String::from(char);
+                while let Some(new_char) = chars.peek() {
+                    if new_char.is_digit(10) {
+                        num_as_string.push(*new_char);
+                        chars.next();
+                    } else if *new_char == '.' && !comma {
+                        num_as_string.push(*new_char);
+                        comma = true;
+                        chars.next();
+                    } else {
+                        break;
+                    }
+                }
+                TokenType::Number(num_as_string)
+            }
             _ => TokenType::Unknown(char.into()),
         };
 
@@ -149,6 +167,7 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                     string,
                     finished: _,
                 } => string.clone(),
+                TokenType::Number(num) => num.clone(),
                 TokenType::Operator { op: _ } => {
                     let mut s = char.to_string();
                     if let Some(next_char) = chars.next() {
@@ -198,8 +217,16 @@ fn print_tokens(tokens: &Vec<Token>) {
                 "{} {} {}",
                 token.token_type,
                 token.lexeme,
-                split_string(&string)
+                trim_string(&string)
             ),
+            TokenType::Number(_) => {
+                println!(
+                    "{} {} {}",
+                    token.token_type,
+                    token.lexeme,
+                    format_number_as_string(&token.lexeme)
+                )
+            }
             TokenType::Blank => (),
             _ => println!("{} {} null", token.token_type, token.lexeme),
         }
@@ -210,14 +237,17 @@ fn print_tokens(tokens: &Vec<Token>) {
     }
 }
 
-fn split_string(to_split: &String) -> String {
-    let new_string = to_split.as_str();
+fn trim_string(to_split: &String) -> String {
+    let length = to_split.len();
+    to_split[1..length - 1].to_string()
+}
+
+fn format_number_as_string(num_as_string: &String) -> String {
+    let mut new_string = num_as_string.clone();
+    if new_string.ends_with('.') {
+        new_string.push('0')
+    }
     new_string
-        .replace("\"", "")
-        .split(" ")
-        .map(String::from)
-        .collect::<Vec<String>>()
-        .join(" ")
 }
 
 pub fn scanner(source: String) {
