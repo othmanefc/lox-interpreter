@@ -7,6 +7,12 @@ enum TokenType {
     RightParen,
     LeftBrace,
     RightBrace,
+    Star,
+    Dot,
+    Comma,
+    Plus,
+    Minus,
+    Semicolon,
     EOF,
     Unknown(String),
 }
@@ -25,6 +31,12 @@ fn tokenize(line: &str) -> Vec<Token> {
             ')' => TokenType::RightParen,
             '{' => TokenType::LeftBrace,
             '}' => TokenType::RightBrace,
+            '*' => TokenType::Star,
+            '.' => TokenType::Dot,
+            ',' => TokenType::Comma,
+            '+' => TokenType::Plus,
+            ';' => TokenType::Semicolon,
+            '-' => TokenType::Minus,
             _ => TokenType::Unknown(char.into()),
         };
         tokens.push(Token {
