@@ -1,3 +1,5 @@
+use std::io::{self, Write};
+use std::process;
 use strum_macros::Display;
 
 #[derive(Display)]
@@ -20,9 +22,10 @@ enum TokenType {
 struct Token {
     token_type: TokenType,
     lexeme: String,
+    line: usize,
 }
 
-fn tokenize(line: &str) -> Vec<Token> {
+fn tokenize(line: &str, line_number: usize) -> Vec<Token> {
     let mut tokens = Vec::<Token>::new();
 
     for char in line.chars() {
@@ -45,27 +48,48 @@ fn tokenize(line: &str) -> Vec<Token> {
                 _ => char.into(),
             },
             token_type,
+            line: line_number,
         });
     }
     tokens
 }
 
 fn print_tokens(tokens: &Vec<Token>) {
+    let mut has_errored = false;
     for token in tokens.iter() {
-        println!("{} {} null", token.token_type, token.lexeme);
+        match &token.token_type {
+            TokenType::Unknown(unk) => {
+                has_errored = true;
+                writeln!(
+                    io::stderr(),
+                    "[line {}] Error: Unexpected character: {}",
+                    token.line,
+                    unk.as_str()
+                )
+                .unwrap()
+            }
+            _ => println!("{} {} null", token.token_type, token.lexeme),
+        }
+    }
+
+    if has_errored {
+        process::exit(65);
     }
 }
 pub fn scanner(source: String) {
     let lines = source.lines();
     let mut tokens = Vec::<Token>::new();
+    let mut lines_count = 0;
 
-    for line in lines {
-        let mut line_tokens = tokenize(line);
+    for (i, line) in lines.enumerate() {
+        let mut line_tokens = tokenize(line, i + 1);
         tokens.append(&mut line_tokens);
+        lines_count += 1;
     }
     tokens.push(Token {
         lexeme: String::new(),
         token_type: TokenType::EOF,
+        line: lines_count + 1,
     });
     print_tokens(&tokens)
 }
