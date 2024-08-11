@@ -1,6 +1,7 @@
 use std::env;
 use std::fs;
 use std::io::{self, Write};
+mod scanner;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -19,12 +20,7 @@ fn main() {
                 String::new()
             });
 
-            // Uncomment this block to pass the first stage
-            if !file_contents.is_empty() {
-                panic!("Scanner not implemented");
-            } else {
-                println!("EOF  null"); // Placeholder, remove this line when implementing the scanner
-            }
+            scanner::scanner(file_contents)
         }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
