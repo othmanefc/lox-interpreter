@@ -44,6 +44,7 @@ enum TokenType {
         finished: bool,
     },
     Number(String),
+    Identifier(String),
 }
 
 struct Token {
@@ -156,6 +157,19 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                 }
                 TokenType::Number(num_as_string)
             }
+            char if char.is_alphanumeric() || char == '_' => {
+                let mut cont = String::from(char);
+                while let Some(&n) = chars.peek() {
+                    match n {
+                        n if n.is_alphanumeric() || n == '_' => {
+                            cont.push(n);
+                            chars.next();
+                        }
+                        _ => break,
+                    }
+                }
+                TokenType::Identifier(cont)
+            }
             _ => TokenType::Unknown(char.into()),
         };
 
@@ -171,6 +185,7 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                     finished: _,
                 } => string.clone(),
                 TokenType::Number(num) => num.clone(),
+                TokenType::Identifier(st) => st.clone(),
                 TokenType::Operator { op: _ } => {
                     let mut s = char.to_string();
                     if let Some(next_char) = chars.next() {
@@ -260,6 +275,8 @@ fn format_number_as_string(num_as_string: &String) -> String {
         new_string.push('0')
     } else if !new_string.contains('.') {
         new_string.push_str(".0")
+    } else if new_string.ends_with(".00") {
+        new_string = new_string.replace(".00", ".0");
     }
     new_string
 }
