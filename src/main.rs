@@ -1,7 +1,7 @@
+mod scanner;
 use std::env;
 use std::fs;
 use std::io::{self, Write};
-mod scanner;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -19,8 +19,7 @@ fn main() {
                 writeln!(io::stderr(), "Failed to read file {}", filename).unwrap();
                 String::new()
             });
-
-            scanner::scanner(file_contents)
+            scanner::tokenize::scanner(file_contents)
         }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();

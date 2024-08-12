@@ -21,6 +21,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.68"                                # error handling
 bytes = "1.3.0"                                  # helps manage buffers
+phf = { version = "0.11.2", features = ["macros"] }
 strum = "0.26.3"
 strum_macros = "0.26.4"
 thiserror = "1.0.38"                             # error handling
