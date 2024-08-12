@@ -68,6 +68,7 @@ enum TokenType {
     #[strum(to_string = "{kw}")]
     Keyword {
         kw: Keyword,
+        val: String,
     },
 }
 struct Token {
@@ -76,23 +77,23 @@ struct Token {
     line: usize,
 }
 
-static KEYWORDS: phf::Map<&'static str, TokenType> = phf_map! {
-    "and" => TokenType::Keyword {kw: Keyword::And},
-    "class" => TokenType::Keyword {kw: Keyword::Class},
-    "else" => TokenType::Keyword {kw: Keyword::Else},
-    "false" => TokenType::Keyword {kw: Keyword::False},
-    "for" => TokenType::Keyword {kw: Keyword::For},
-    "fun" => TokenType::Keyword {kw: Keyword::Fun},
-    "if" => TokenType::Keyword {kw: Keyword::If},
-    "nil" => TokenType::Keyword {kw: Keyword::Nil},
-    "or" => TokenType::Keyword {kw: Keyword::Or},
-    "print" => TokenType::Keyword {kw: Keyword::Print},
-    "return" => TokenType::Keyword {kw: Keyword::Return},
-    "super" => TokenType::Keyword {kw: Keyword::Super},
-    "this" => TokenType::Keyword {kw: Keyword::This},
-    "true" => TokenType::Keyword {kw: Keyword::True},
-    "var" => TokenType::Keyword {kw: Keyword::Var},
-    "while" => TokenType::Keyword {kw: Keyword::While},
+static KEYWORDS: phf::Map<&'static str, Keyword> = phf_map! {
+    "and" => Keyword::And,
+    "class" => Keyword::Class,
+    "else" => Keyword::Else,
+    "false" => Keyword::False,
+    "for" => Keyword::For,
+    "fun" =>  Keyword::Fun,
+    "if" =>  Keyword::If,
+    "nil" =>  Keyword::Nil,
+    "or" =>  Keyword::Or,
+    "print" =>  Keyword::Print,
+    "return" =>  Keyword::Return,
+    "super" =>  Keyword::Super,
+    "this" =>  Keyword::This,
+    "true" =>  Keyword::True,
+    "var" =>  Keyword::Var,
+    "while" => Keyword::While,
 };
 
 fn operators(
@@ -210,9 +211,11 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                         _ => break,
                     }
                 }
-                KEYWORDS
-                    .get(cont.as_str())
-                    .map_or(TokenType::Identifier(cont), |c| c.clone())
+                if let Some(kw) = KEYWORDS.get(cont.as_str()) {
+                    TokenType::Keyword { kw: kw.clone(), val: cont }
+                } else {
+                    TokenType::Identifier(cont)
+                }
             }
             _ => TokenType::Unknown(char.into()),
         };
@@ -230,6 +233,7 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                 } => string.clone(),
                 TokenType::Number(num) => num.clone(),
                 TokenType::Identifier(st) => st.clone(),
+                TokenType::Keyword { kw: _, val } => val.clone(),
                 TokenType::Operator { op: _ } => {
                     let mut s = char.to_string();
                     if let Some(next_char) = chars.next() {
