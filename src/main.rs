@@ -1,7 +1,21 @@
+mod evaluate;
+mod exprs;
+mod parser;
 mod scanner;
+mod tokens;
+use exprs::print_exprs;
+use parser::parser::parse_tokens;
+use scanner::tokenize::{print_tokens, scanner};
 use std::env;
 use std::fs;
 use std::io::{self, Write};
+
+fn get_file_content(filename: &String) -> String {
+    fs::read_to_string(filename).unwrap_or_else(|_| {
+        writeln!(io::stderr(), "Failed to read file {}", filename).unwrap();
+        String::new()
+    })
+}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -15,11 +29,18 @@ fn main() {
 
     match command.as_str() {
         "tokenize" => {
-            let file_contents = fs::read_to_string(filename).unwrap_or_else(|_| {
-                writeln!(io::stderr(), "Failed to read file {}", filename).unwrap();
-                String::new()
-            });
-            scanner::tokenize::scanner(file_contents)
+            let file_contents = get_file_content(filename);
+            let tokens = scanner(file_contents);
+            print_tokens(&tokens)
+        }
+        "evaluate" => {
+            todo!()
+        }
+        "parse" => {
+            let file_contents = get_file_content(filename);
+            let tokens = scanner(file_contents);
+            let exprs = parse_tokens(&tokens);
+            print_exprs(&exprs)
         }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();

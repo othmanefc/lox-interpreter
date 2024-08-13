@@ -1,102 +1,8 @@
-use phf::phf_map;
 use std::io::{self, Write};
 use std::process;
-use strum_macros::Display;
+use crate::tokens::{Operator, Token, TokenType, KEYWORDS};
 
-#[derive(Display, Clone)]
-#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
-enum Operator {
-    EqualEqual,
-    BangEqual,
-    LessEqual,
-    GreaterEqual,
-}
-
-#[derive(Display, Clone)]
-#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
-enum Keyword {
-    And,
-    Class,
-    Else,
-    False,
-    For,
-    Fun,
-    If,
-    Nil,
-    Or,
-    Print,
-    Return,
-    Super,
-    This,
-    True,
-    Var,
-    While,
-}
-
-#[derive(Display, Clone)]
-#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
-enum TokenType {
-    RightParen,
-    LeftParen,
-    LeftBrace,
-    RightBrace,
-    Star,
-    Dot,
-    Comma,
-    Plus,
-    Minus,
-    Semicolon,
-    Equal,
-    #[strum(to_string = "{op}")]
-    Operator {
-        op: Operator,
-    },
-    Bang,
-    Less,
-    Greater,
-    EOF,
-    Unknown(String),
-    Comment,
-    Slash,
-    Blank,
-    String {
-        string: String,
-        finished: bool,
-    },
-    Number(String),
-    Identifier(String),
-    #[strum(to_string = "{kw}")]
-    Keyword {
-        kw: Keyword,
-        val: String,
-    },
-}
-struct Token {
-    token_type: TokenType,
-    lexeme: String,
-    line: usize,
-}
-
-static KEYWORDS: phf::Map<&'static str, Keyword> = phf_map! {
-    "and" => Keyword::And,
-    "class" => Keyword::Class,
-    "else" => Keyword::Else,
-    "false" => Keyword::False,
-    "for" => Keyword::For,
-    "fun" =>  Keyword::Fun,
-    "if" =>  Keyword::If,
-    "nil" =>  Keyword::Nil,
-    "or" =>  Keyword::Or,
-    "print" =>  Keyword::Print,
-    "return" =>  Keyword::Return,
-    "super" =>  Keyword::Super,
-    "this" =>  Keyword::This,
-    "true" =>  Keyword::True,
-    "var" =>  Keyword::Var,
-    "while" => Keyword::While,
-};
-
-fn operators(
+fn gen_operator(
     char_: Option<char>,
     operator_type: TokenType,
     simple_type: TokenType,
@@ -126,7 +32,7 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
             '+' => TokenType::Plus,
             ';' => TokenType::Semicolon,
             '-' => TokenType::Minus,
-            '=' => operators(
+            '=' => gen_operator(
                 chars.peek().copied(),
                 TokenType::Operator {
                     op: Operator::EqualEqual,
@@ -134,7 +40,7 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                 TokenType::Equal,
                 '=',
             ),
-            '!' => operators(
+            '!' => gen_operator(
                 chars.peek().copied(),
                 TokenType::Operator {
                     op: Operator::BangEqual,
@@ -142,7 +48,7 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                 TokenType::Bang,
                 '=',
             ),
-            '<' => operators(
+            '<' => gen_operator(
                 chars.peek().copied(),
                 TokenType::Operator {
                     op: Operator::LessEqual,
@@ -150,7 +56,7 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                 TokenType::Less,
                 '=',
             ),
-            '>' => operators(
+            '>' => gen_operator(
                 chars.peek().copied(),
                 TokenType::Operator {
                     op: Operator::GreaterEqual,
@@ -158,7 +64,7 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                 TokenType::Greater,
                 '=',
             ),
-            '/' => operators(
+            '/' => gen_operator(
                 chars.peek().copied(),
                 TokenType::Comment,
                 TokenType::Slash,
@@ -259,7 +165,7 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
     tokens
 }
 
-fn print_tokens(tokens: &Vec<Token>) {
+pub fn print_tokens(tokens: &Vec<Token>) {
     let mut has_errored = false;
     for token in tokens.iter() {
         match &token.token_type {
@@ -329,7 +235,7 @@ fn format_number_as_string(num_as_string: &String) -> String {
     new_string
 }
 
-pub fn scanner(source: String) {
+pub fn scanner(source: String) -> Vec<Token> {
     let lines = source.lines();
     let mut tokens = Vec::<Token>::new();
     let mut lines_count = 0;
@@ -344,5 +250,5 @@ pub fn scanner(source: String) {
         token_type: TokenType::EOF,
         line: lines_count + 1,
     });
-    print_tokens(&tokens)
+    tokens
 }
