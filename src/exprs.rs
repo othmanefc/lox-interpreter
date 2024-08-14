@@ -1,15 +1,17 @@
 use std::fmt::Display;
 
+use crate::tokens::Token;
+
 #[derive(Clone)]
 pub enum Expr {
     Bool(bool),
     Nil,
     Number(f64),
     String(String),
-    // Unary {
-    //     operator: Token,
-    //     right: Box<Expr>,
-    // },
+    Unary {
+        operator: Token,
+        right: Box<Expr>,
+    },
     // Binary {
     //     operator: Token,
     //     left: Box<Expr>,
@@ -25,9 +27,9 @@ impl Display for Expr {
             Expr::Nil => f.write_str("nil"),
             Expr::Number(n) => f.write_fmt(format_args!("{n:?}")),
             Expr::String(s) => f.write_fmt(format_args!("{}", s)),
-            // Expr::Unary { operator, right } => {
-            //     f.write_fmt(format_args!("{} {right}", operator.lexeme))
-            // }
+            Expr::Unary { operator, right } => {
+                f.write_fmt(format_args!("({} {right})", operator.lexeme))
+            }
             // Expr::Binary {
             //     operator,
             //     left,

@@ -54,6 +54,26 @@ pub fn parse_tokens(tokens: &Vec<Token>) -> Vec<Option<Expr>> {
                 }
                 Some(Expr::Grouping(enclosed_exprs))
             }
+            TokenType::Minus | TokenType::Bang => {
+                let final_expr = if let Some(next_token) = tokens_iter.next() {
+                    let vec_next_token = vec![next_token.clone()];
+                    let vec_next_expr: Vec<Expr> = parse_tokens(&vec_next_token)
+                        .into_iter()
+                        .flatten()
+                        .collect();
+                    if let Some(next_expr) = vec_next_expr.into_iter().next() {
+                        Expr::Unary {
+                            operator: token.clone(),
+                            right: Box::new(next_expr),
+                        }
+                    } else {
+                        panic!("Expected expression after unary operator")
+                    }
+                } else {
+                    panic!("Unexpected end of input after unary operator")
+                };
+                Some(final_expr)
+            }
             _ => None,
         };
         exprs.push(expr)
