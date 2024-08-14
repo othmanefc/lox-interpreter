@@ -23,27 +23,35 @@ pub fn parse_tokens(tokens: &Vec<Token>) -> Vec<Option<Expr>> {
             TokenType::String { string, .. } => Some(Expr::String(trim_string(&string))),
             TokenType::Blank => None,
             TokenType::LeftParen => {
-                let mut closed = false;
-                let mut enclosed_exprs = Vec::<Expr>::new();
+                let mut depth = 1;
+                let mut enclosed_tokens = Vec::new();
+
                 while let Some(next_token) = tokens_iter.next() {
                     match &next_token.token_type {
+                        TokenType::LeftParen => {
+                            depth += 1;
+                            enclosed_tokens.push(next_token.clone());
+                        }
                         TokenType::RightParen => {
-                            closed = true;
-                            break;
+                            depth -= 1;
+                            if depth == 0 {
+                                break;
+                            }
+                            enclosed_tokens.push(next_token.clone());
                         }
-                        _ => {
-                            let mut vec = Vec::new();
-                            vec.push(next_token.clone());
-                            let exp = parse_tokens(&vec);
-                            let mut a = exp.into_iter().flatten().collect::<Vec<Expr>>();
-                            enclosed_exprs.append(&mut a);
-                        }
+                        _ => enclosed_tokens.push(next_token.clone()),
                     }
                 }
-                if closed == false {
+
+                if depth != 0 {
                     writeln!(io::stderr(), "Error: Unmatched parentheses.").unwrap();
-                    process::exit(65)
+                    process::exit(65);
                 }
+
+                let enclosed_exprs = parse_tokens(&enclosed_tokens)
+                    .into_iter()
+                    .flatten()
+                    .collect();
                 Some(Expr::Grouping(enclosed_exprs))
             }
             _ => None,
