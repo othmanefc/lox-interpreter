@@ -43,15 +43,15 @@ pub fn parse_tokens(tokens: &Vec<Token>) -> Vec<Option<Expr>> {
                     }
                 }
 
-                if depth != 0 {
-                    writeln!(io::stderr(), "Error: Unmatched parentheses.").unwrap();
-                    process::exit(65);
-                }
-
-                let enclosed_exprs = parse_tokens(&enclosed_tokens)
+                let enclosed_exprs: Vec<Expr> = parse_tokens(&enclosed_tokens)
                     .into_iter()
                     .flatten()
                     .collect();
+
+                if depth != 0 || enclosed_exprs.len() == 0 {
+                    writeln!(io::stderr(), "Error: Unmatched parentheses.").unwrap();
+                    process::exit(65);
+                }
                 Some(Expr::Grouping(enclosed_exprs))
             }
             _ => None,
