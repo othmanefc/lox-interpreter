@@ -15,7 +15,7 @@ pub enum Expr {
     //     left: Box<Expr>,
     //     right: Box<Expr>,
     // },
-    // Grouping(Vec<Expr>),
+    Grouping(Vec<Expr>),
 }
 
 impl Display for Expr {
@@ -24,7 +24,7 @@ impl Display for Expr {
             Expr::Bool(b) => f.write_fmt(format_args!("{b}")),
             Expr::Nil => f.write_str("nil"),
             Expr::Number(n) => f.write_fmt(format_args!("{n:?}")),
-            Expr::String(s) => f.write_fmt(format_args!("{s:?}")),
+            Expr::String(s) => f.write_fmt(format_args!("{}", s)),
             // Expr::Unary { operator, right } => {
             //     f.write_fmt(format_args!("{} {right}", operator.lexeme))
             // }
@@ -33,7 +33,16 @@ impl Display for Expr {
             //     left,
             //     right,
             // } => f.write_fmt(format_args!("({} {left} {right})", operator.lexeme)),
-            // Expr::Grouping(_) => todo!(),
+            Expr::Grouping(exprs) => {
+                write!(f, "(")?;
+                for (i, expr) in exprs.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, " ")?;
+                    }
+                    write!(f, "group {}", expr)?;
+                }
+                write!(f, ")")
+            }
         }
     }
 }
