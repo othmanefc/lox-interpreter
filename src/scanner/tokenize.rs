@@ -1,6 +1,7 @@
 use std::io::{self, Write};
 use std::process;
 use crate::tokens::{Operator, Token, TokenType, KEYWORDS};
+use crate::utils::{format_number_as_string, trim_string};
 
 fn gen_operator(
     char_: Option<char>,
@@ -216,23 +217,6 @@ pub fn print_tokens(tokens: &Vec<Token>) {
     if has_errored {
         process::exit(65);
     }
-}
-
-fn trim_string(to_split: &String) -> String {
-    let length = to_split.len();
-    to_split[1..length - 1].to_string()
-}
-
-fn format_number_as_string(num_as_string: &String) -> String {
-    let mut new_string = num_as_string.clone();
-    if new_string.ends_with('.') {
-        new_string.push('0')
-    } else if !new_string.contains('.') {
-        new_string.push_str(".0")
-    } else if new_string.ends_with(".00") {
-        new_string = new_string.replace(".00", ".0");
-    }
-    new_string
 }
 
 pub fn scanner(source: String) -> Vec<Token> {

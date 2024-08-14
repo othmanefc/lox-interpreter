@@ -1,6 +1,4 @@
 use phf::phf_map;
-use std::io::{self, Write};
-use std::process;
 use strum_macros::Display;
 
 #[derive(Display, Clone)]

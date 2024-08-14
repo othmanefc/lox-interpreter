@@ -1,5 +1,6 @@
 use crate::exprs::Expr;
 use crate::tokens::{Keyword, Token, TokenType};
+use crate::utils::trim_string;
 
 pub fn parse_tokens(tokens: &Vec<Token>) -> Vec<Option<Expr>> {
     let mut exprs = Vec::<Option<Expr>>::new();
@@ -16,7 +17,7 @@ pub fn parse_tokens(tokens: &Vec<Token>) -> Vec<Option<Expr>> {
                 kw: Keyword::Nil, ..
             } => Some(Expr::Nil),
             TokenType::Number(val) => Some(Expr::Number(string_to_f64(val).unwrap())),
-            TokenType::Identifier(val) => Some(Expr::String(val.clone())),
+            TokenType::String { string, .. } => Some(Expr::String(trim_string(&string))),
             TokenType::Blank => None,
             _ => None,
         };

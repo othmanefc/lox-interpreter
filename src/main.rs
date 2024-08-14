@@ -3,6 +3,7 @@ mod exprs;
 mod parser;
 mod scanner;
 mod tokens;
+mod utils;
 use exprs::print_exprs;
 use parser::parser::parse_tokens;
 use scanner::tokenize::{print_tokens, scanner};
