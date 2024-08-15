@@ -1,4 +1,5 @@
 use std::io::{self, Write};
+use std::iter::Peekable;
 use std::process;
 
 use crate::exprs::Expr;
@@ -7,17 +8,64 @@ use crate::utils::trim_string;
 
 pub fn parse_tokens(tokens_iter: &mut std::slice::Iter<'_, Token>) -> Vec<Option<Expr>> {
     let mut expressions = Vec::new();
-
-    while tokens_iter.len() > 0 {
-        expressions.push(parse_tokens_into_expr(tokens_iter));
+    let mut tokens_peek = tokens_iter.to_owned().peekable();
+    while tokens_peek.peek().is_some() {
+        expressions.push(parse_expression(&mut tokens_peek));
     }
     expressions
 }
 
-pub fn parse_tokens_into_expr(tokens_iter: &mut std::slice::Iter<'_, Token>) -> Option<Expr> {
+fn string_to_f64(s: &str) -> Result<f64, std::num::ParseFloatError> {
+    s.parse()
+}
+
+fn parse_expression(tokens_iter: &mut Peekable<std::slice::Iter<'_, Token>>) -> Option<Expr> {
+    parse_binary(tokens_iter)
+}
+
+fn parse_binary(tokens_iter: &mut Peekable<std::slice::Iter<'_, Token>>) -> Option<Expr> {
+    let mut left = parse_unary(tokens_iter)?;
+    while let Some(token) = tokens_iter.peek() {
+        match &token.token_type {
+            TokenType::Slash | TokenType::Star => {
+                let consumed_token = tokens_iter.next()?;
+                let right = parse_unary(tokens_iter)?;
+                left = Expr::Binary {
+                    operator: consumed_token.clone(),
+                    left: Box::new(left),
+                    right: Box::new(right),
+                };
+            }
+            _ => break,
+        }
+    }
+
+    Some(left)
+}
+
+fn parse_unary(tokens_iter: &mut Peekable<std::slice::Iter<'_, Token>>) -> Option<Expr> {
     let mut expr = None;
+    if let Some(token) = tokens_iter.peek() {
+        match &token.token_type {
+            TokenType::Minus | TokenType::Bang => {
+                let consumed_token = tokens_iter.next()?;
+                let right = parse_unary(tokens_iter)?;
+                expr = Some(Expr::Unary {
+                    right: Box::new(right),
+                    operator: consumed_token.clone(),
+                });
+            }
+            _ => {
+                expr = parse_primary(tokens_iter);
+            }
+        }
+    }
+    expr
+}
+
+fn parse_primary(tokens_iter: &mut Peekable<std::slice::Iter<'_, Token>>) -> Option<Expr> {
     if let Some(token) = tokens_iter.next() {
-        expr = match &token.token_type {
+        match &token.token_type {
             TokenType::Keyword {
                 kw: Keyword::True, ..
             } => Some(Expr::Bool(true)),
@@ -28,14 +76,10 @@ pub fn parse_tokens_into_expr(tokens_iter: &mut std::slice::Iter<'_, Token>) -> 
                 kw: Keyword::Nil, ..
             } => Some(Expr::Nil),
             TokenType::Number(val) => Some(Expr::Number(string_to_f64(&val).unwrap())),
-            TokenType::String { string, .. } => {
-                Some(Expr::String(trim_string(&string)))
-            }
-            TokenType::Blank => None,
+            TokenType::String { string, .. } => Some(Expr::String(trim_string(&string))),
             TokenType::LeftParen => {
                 let mut depth = 1;
                 let mut enclosed_tokens = Vec::new();
-
                 while let Some(next_token) = tokens_iter.next() {
                     match &next_token.token_type {
                         TokenType::LeftParen => {
@@ -64,16 +108,9 @@ pub fn parse_tokens_into_expr(tokens_iter: &mut std::slice::Iter<'_, Token>) -> 
                 }
                 Some(Expr::Grouping(enclosed_exprs))
             }
-            TokenType::Minus | TokenType::Bang => Some(Expr::Unary {
-                operator: token.clone(),
-                right: Box::new(parse_tokens_into_expr(tokens_iter).clone()?),
-            }),
             _ => None,
-        };
+        }
+    } else {
+        None
     }
-    expr
-}
-
-fn string_to_f64(s: &str) -> Result<f64, std::num::ParseFloatError> {
-    s.parse()
 }

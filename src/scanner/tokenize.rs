@@ -1,7 +1,7 @@
-use std::io::{self, Write};
-use std::process;
 use crate::tokens::{Operator, Token, TokenType, KEYWORDS};
 use crate::utils::{format_number_as_string, trim_string};
+use std::io::{self, Write};
+use std::process;
 
 fn gen_operator(
     char_: Option<char>,
@@ -22,56 +22,57 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
     let mut chars = line.chars().peekable();
 
     while let Some(char) = chars.next() {
+        // let mut token_type = None;
         let token_type = match char {
-            '(' => TokenType::LeftParen,
-            ')' => TokenType::RightParen,
-            '{' => TokenType::LeftBrace,
-            '}' => TokenType::RightBrace,
-            '*' => TokenType::Star,
-            '.' => TokenType::Dot,
-            ',' => TokenType::Comma,
-            '+' => TokenType::Plus,
-            ';' => TokenType::Semicolon,
-            '-' => TokenType::Minus,
-            '=' => gen_operator(
+            '(' => Some(TokenType::LeftParen),
+            ')' => Some(TokenType::RightParen),
+            '{' => Some(TokenType::LeftBrace),
+            '}' => Some(TokenType::RightBrace),
+            '*' => Some(TokenType::Star),
+            '.' => Some(TokenType::Dot),
+            ',' => Some(TokenType::Comma),
+            '+' => Some(TokenType::Plus),
+            ';' => Some(TokenType::Semicolon),
+            '-' => Some(TokenType::Minus),
+            '=' => Some(gen_operator(
                 chars.peek().copied(),
                 TokenType::Operator {
                     op: Operator::EqualEqual,
                 },
                 TokenType::Equal,
                 '=',
-            ),
-            '!' => gen_operator(
+            )),
+            '!' => Some(gen_operator(
                 chars.peek().copied(),
                 TokenType::Operator {
                     op: Operator::BangEqual,
                 },
                 TokenType::Bang,
                 '=',
-            ),
-            '<' => gen_operator(
+            )),
+            '<' => Some(gen_operator(
                 chars.peek().copied(),
                 TokenType::Operator {
                     op: Operator::LessEqual,
                 },
                 TokenType::Less,
                 '=',
-            ),
-            '>' => gen_operator(
+            )),
+            '>' => Some(gen_operator(
                 chars.peek().copied(),
                 TokenType::Operator {
                     op: Operator::GreaterEqual,
                 },
                 TokenType::Greater,
                 '=',
-            ),
-            '/' => gen_operator(
+            )),
+            '/' => Some(gen_operator(
                 chars.peek().copied(),
                 TokenType::Comment,
                 TokenType::Slash,
                 '/',
-            ),
-            ' ' | '\n' | '\t' => TokenType::Blank,
+            )),
+            ' ' | '\n' | '\t' => None,
             '"' => {
                 let mut finished = false;
                 let mut string_ = r#"""#.to_string();
@@ -82,10 +83,10 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                         break;
                     }
                 }
-                TokenType::String {
+                Some(TokenType::String {
                     string: string_,
                     finished,
-                }
+                })
             }
             char if char.is_digit(10) => {
                 let mut has_decimal = false;
@@ -105,7 +106,7 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                         _ => break,
                     }
                 }
-                TokenType::Number(num_as_string)
+                Some(TokenType::Number(num_as_string))
             }
             char if char.is_alphanumeric() || char == '_' => {
                 let mut cont = String::from(char);
@@ -119,48 +120,52 @@ fn tokenize_line(line: &str, line_number: usize) -> Vec<Token> {
                     }
                 }
                 if let Some(kw) = KEYWORDS.get(cont.as_str()) {
-                    TokenType::Keyword { kw: kw.clone(), val: cont }
+                    Some(TokenType::Keyword {
+                        kw: kw.clone(),
+                        val: cont,
+                    })
                 } else {
-                    TokenType::Identifier(cont)
+                    Some(TokenType::Identifier(cont))
                 }
             }
-            _ => TokenType::Unknown(char.into()),
+            _ => Some(TokenType::Unknown(char.into())),
         };
 
-        if matches!(token_type, TokenType::Comment) {
-            return tokens;
-        }
-
-        tokens.push(Token {
-            lexeme: match &token_type {
-                TokenType::Unknown(_) => String::new(),
-                TokenType::String {
-                    string,
-                    finished: _,
-                } => string.clone(),
-                TokenType::Number(num) => num.clone(),
-                TokenType::Identifier(st) => st.clone(),
-                TokenType::Keyword { kw: _, val } => val.clone(),
-                TokenType::Operator { op: _ } => {
-                    let mut s = char.to_string();
-                    if let Some(next_char) = chars.next() {
-                        s.push(next_char)
+        if let Some(token_type_u) = token_type {
+            if matches!(token_type_u, TokenType::Comment) {
+                return tokens;
+            }
+            tokens.push(Token {
+                lexeme: match &token_type_u {
+                    TokenType::Unknown(_) => String::new(),
+                    TokenType::String {
+                        string,
+                        finished: _,
+                    } => string.clone(),
+                    TokenType::Number(num) => num.clone(),
+                    TokenType::Identifier(st) => st.clone(),
+                    TokenType::Keyword { kw: _, val } => val.clone(),
+                    TokenType::Operator { op: _ } => {
+                        let mut s = char.to_string();
+                        if let Some(next_char) = chars.next() {
+                            s.push(next_char)
+                        }
+                        s
                     }
-                    s
-                }
-                _ => char.into(),
-            },
-            token_type: token_type.clone(),
-            line: line_number,
-        });
-
-        match token_type {
-            TokenType::Number(num) if num.ends_with('.') => tokens.push(Token {
-                lexeme: '.'.into(),
-                token_type: TokenType::Dot,
+                    _ => char.into(),
+                },
+                token_type: token_type_u.clone(),
                 line: line_number,
-            }),
-            _ => (),
+            });
+
+            match token_type_u {
+                TokenType::Number(num) if num.ends_with('.') => tokens.push(Token {
+                    lexeme: '.'.into(),
+                    token_type: TokenType::Dot,
+                    line: line_number,
+                }),
+                _ => (),
+            }
         }
     }
     tokens
@@ -209,7 +214,7 @@ pub fn print_tokens(tokens: &Vec<Token>) {
                     format_number_as_string(&token.lexeme)
                 )
             }
-            TokenType::Blank => (),
+            // TokenType::Blank => (),
             _ => println!("{} {} null", token.token_type, token.lexeme),
         }
     }

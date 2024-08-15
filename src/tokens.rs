@@ -56,7 +56,7 @@ pub enum TokenType {
     Unknown(String),
     Comment,
     Slash,
-    Blank,
+    // Blank,
     String {
         string: String,
         finished: bool,
