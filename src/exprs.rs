@@ -8,10 +8,7 @@ pub enum Expr {
     Nil,
     Number(f64),
     String(String),
-    Unary {
-        operator: Token,
-        right: Box<Expr>,
-    },
+    Unary { operator: Token, right: Box<Expr> },
     // Binary {
     //     operator: Token,
     //     left: Box<Expr>,

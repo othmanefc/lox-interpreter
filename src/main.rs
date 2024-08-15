@@ -40,7 +40,7 @@ fn main() {
         "parse" => {
             let file_contents = get_file_content(filename);
             let tokens = scanner(file_contents);
-            let exprs = parse_tokens(&tokens);
+            let exprs = parse_tokens(&mut tokens.iter());
             print_exprs(&exprs)
         }
         _ => {
