@@ -3,7 +3,7 @@ use std::iter::Peekable;
 use std::process;
 
 use crate::exprs::Expr;
-use crate::tokens::{Keyword, Token, TokenType};
+use crate::tokens::{Keyword, Operator, Token, TokenType};
 use crate::utils::trim_string;
 
 pub fn parse_tokens(tokens_iter: &mut std::slice::Iter<'_, Token>) -> Vec<Option<Expr>> {
@@ -27,7 +27,18 @@ fn parse_binary(tokens_iter: &mut Peekable<std::slice::Iter<'_, Token>>) -> Opti
     let mut left = parse_unary(tokens_iter)?;
     while let Some(token) = tokens_iter.peek() {
         match &token.token_type {
-            TokenType::Slash | TokenType::Star | TokenType::Plus | TokenType::Minus => {
+            TokenType::Slash
+            | TokenType::Star
+            | TokenType::Plus
+            | TokenType::Minus
+            | TokenType::Greater
+            | TokenType::Less
+            | TokenType::Operator {
+                op: Operator::LessEqual,
+            }
+            | TokenType::Operator {
+                op: Operator::GreaterEqual,
+            } => {
                 let consumed_token = tokens_iter.next()?;
                 let right = parse_unary(tokens_iter)?;
                 left = Expr::Binary {
