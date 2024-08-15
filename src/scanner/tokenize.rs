@@ -214,7 +214,6 @@ pub fn print_tokens(tokens: &Vec<Token>) {
                     format_number_as_string(&token.lexeme)
                 )
             }
-            // TokenType::Blank => (),
             _ => println!("{} {} null", token.token_type, token.lexeme),
         }
     }

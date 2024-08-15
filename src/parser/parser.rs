@@ -93,7 +93,10 @@ fn parse_primary(tokens_iter: &mut Peekable<std::slice::Iter<'_, Token>>) -> Opt
                 kw: Keyword::Nil, ..
             } => Some(Expr::Nil),
             TokenType::Number(val) => Some(Expr::Number(string_to_f64(&val).unwrap())),
-            TokenType::String { string, .. } => Some(Expr::String(trim_string(&string))),
+            TokenType::String {
+                string,
+                finished: true,
+            } => Some(Expr::String(trim_string(&string))),
             TokenType::LeftParen => {
                 let mut depth = 1;
                 let mut enclosed_tokens = Vec::new();
@@ -125,7 +128,11 @@ fn parse_primary(tokens_iter: &mut Peekable<std::slice::Iter<'_, Token>>) -> Opt
                 }
                 Some(Expr::Grouping(enclosed_exprs))
             }
-            _ => None,
+            TokenType::EOF => None,
+            t => {
+                writeln!(io::stderr(), "Error: lol: {t}").unwrap();
+                process::exit(65);
+            }
         }
     } else {
         None
