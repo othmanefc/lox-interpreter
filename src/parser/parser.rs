@@ -27,7 +27,7 @@ fn parse_binary(tokens_iter: &mut Peekable<std::slice::Iter<'_, Token>>) -> Opti
     let mut left = parse_unary(tokens_iter)?;
     while let Some(token) = tokens_iter.peek() {
         match &token.token_type {
-            TokenType::Slash | TokenType::Star => {
+            TokenType::Slash | TokenType::Star | TokenType::Plus | TokenType::Minus => {
                 let consumed_token = tokens_iter.next()?;
                 let right = parse_unary(tokens_iter)?;
                 left = Expr::Binary {
