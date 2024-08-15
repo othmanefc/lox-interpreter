@@ -38,6 +38,12 @@ fn parse_binary(tokens_iter: &mut Peekable<std::slice::Iter<'_, Token>>) -> Opti
             }
             | TokenType::Operator {
                 op: Operator::GreaterEqual,
+            }
+            | TokenType::Operator {
+                op: Operator::EqualEqual,
+            }
+            | TokenType::Operator {
+                op: Operator::BangEqual,
             } => {
                 let consumed_token = tokens_iter.next()?;
                 let right = parse_unary(tokens_iter)?;
