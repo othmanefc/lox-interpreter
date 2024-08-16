@@ -11,6 +11,8 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 
+use self::evaluate::evaluate::evaluate_exprs;
+
 fn get_file_content(filename: &String) -> String {
     fs::read_to_string(filename).unwrap_or_else(|_| {
         writeln!(io::stderr(), "Failed to read file {}", filename).unwrap();
@@ -35,7 +37,10 @@ fn main() {
             print_tokens(&tokens)
         }
         "evaluate" => {
-            todo!()
+            let file_contents = get_file_content(filename);
+            let tokens = scanner(file_contents);
+            let exprs = parse_tokens(&mut tokens.iter());
+            evaluate_exprs(exprs)
         }
         "parse" => {
             let file_contents = get_file_content(filename);
