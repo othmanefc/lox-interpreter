@@ -53,7 +53,26 @@ fn evaluate_expr(expr: &Expr) -> Result<Value, &'static str> {
                 _ => Err("Unsupported token type for unary expression"),
             }
         }
-        _ => Err("Unsupported expression type"),
+        Expr::Binary {
+            operator,
+            left,
+            right,
+        } => {
+            let left = evaluate_expr(left)?;
+            let right = evaluate_expr(right)?;
+            match operator.token_type {
+                TokenType::Star => match (left, right) {
+                    (Value::Number(n), Value::Number(m)) => Ok(Value::Number(n * m)),
+                    (_, __) => Err("Unsupported value for Star token"),
+                },
+                TokenType::Slash => match (left, right) {
+                    (Value::Number(n), Value::Number(m)) => Ok(Value::Number(n / m)),
+                    (_, __) => Err("Unsupported value for Slash token"),
+                },
+                _ => Err("Unsupported token type for binary expression"),
+            }
+        }
+        // _ => Err("Unsupported expression type"),
     }
 }
 
