@@ -1,34 +1,57 @@
 use std::fmt::Display;
 
 use crate::exprs::Expr;
+use crate::tokens::TokenType;
 
-fn evaluate_expr(expr: &Expr) -> Result<Box<dyn Display>, &'static str> {
+enum Value {
+    Nil,
+    Bool(bool),
+    Number(f64),
+    String(String),
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Nil => write!(f, "nil"),
+            Value::Bool(b) => write!(f, "{}", b),
+            Value::Number(n) => write!(f, "{}", n),
+            Value::String(s) => write!(f, "{}", s),
+            // Value::Grouping(g) => {
+            //     let g_j = g
+            //         .iter()
+            //         .map(|e| format!("{e}"))
+            //         .collect::<Vec<String>>()
+            //         .join(", ");
+            //     write!(f, "{}", g_j)
+            // }
+        }
+    }
+}
+
+fn evaluate_expr(expr: &Expr) -> Result<Value, &'static str> {
     match expr {
-        Expr::Number(t) => Ok(Box::new(t.to_owned())),
-        Expr::String(s) => Ok(Box::new(s.to_owned())),
-        Expr::Bool(b) => Ok(Box::new(b.to_owned())),
-        Expr::Nil => Ok(Box::new("nil")),
-        // Expr::Grouping(vec_expr) => {
-        // let mut final_ev = Vec::new();
-        // for ex in vec_expr {
-        //     let ev = evaluate_expr(ex)?;
-        //     final_ev.push(ev)
-        // }
-        // Ok(Box::new(final_ev))
-        // let evaluated: Result<Vec<Box<dyn Display>>, &'static str> =
-        //     vec_expr.iter().map(evaluate_expr).collect();
-        // Ok(Box::new(evaluated?))
-        // }
-        Expr::Grouping(vec_expr) => {
-            let evaluated: Result<Vec<Box<dyn Display>>, &'static str> =
-                vec_expr.iter().map(evaluate_expr).collect();
-            let result = evaluated?
-                .iter()
-                .map(|e| format!("{}", e))
-                .collect::<Vec<String>>()
-                .join(", ");
-
-            Ok(Box::new(result))
+        Expr::Number(t) => Ok(Value::Number(t.to_owned())),
+        Expr::String(s) => Ok(Value::String(s.to_owned())),
+        Expr::Bool(b) => Ok(Value::Bool(b.to_owned())),
+        Expr::Nil => Ok(Value::Nil),
+        Expr::Grouping(v) => evaluate_expr(v),
+        Expr::Unary { operator, right } => {
+            let res = evaluate_expr(right)?;
+            match operator.token_type {
+                TokenType::Minus => match res {
+                    Value::Number(n) => Ok(Value::Number(-n)),
+                    _ => Err("Unsupported value for Minus token"),
+                },
+                TokenType::Bang => match res {
+                    Value::Bool(b) => Ok(Value::Bool(!b)),
+                    Value::Nil => Ok(Value::Bool(true)),
+                    Value::Number(n) => Ok(Value::Bool(n == 0.0)),
+                    Value::String(s) => Ok(Value::Bool(s.is_empty())),
+                    // _ => Err("Unsupported value for Bang token"),
+                },
+                _ => Err("Unsupported token type for unary expression"),
+            }
         }
         _ => Err("Unsupported expression type"),
     }

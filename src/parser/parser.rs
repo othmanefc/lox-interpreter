@@ -117,16 +117,21 @@ fn parse_primary(tokens_iter: &mut Peekable<std::slice::Iter<'_, Token>>) -> Opt
                     }
                 }
 
-                let enclosed_exprs: Vec<Expr> = parse_tokens(&mut enclosed_tokens.iter())
-                    .into_iter()
-                    .flatten()
-                    .collect();
-
-                if depth != 0 || enclosed_exprs.len() == 0 {
+                if depth != 0 || enclosed_tokens.is_empty() {
                     writeln!(io::stderr(), "Error: Unmatched parentheses.").unwrap();
                     process::exit(65);
                 }
-                Some(Expr::Grouping(enclosed_exprs))
+                let mut enclosed_tokens_iter = enclosed_tokens.iter().peekable();
+                if let Some(enclosed_epxr) = parse_expression(&mut enclosed_tokens_iter) {
+                    Some(Expr::Grouping(Box::new(enclosed_epxr)))
+                } else {
+                    writeln!(
+                        io::stderr(),
+                        "Error: Failed to parse expression inside parentheses."
+                    )
+                    .unwrap();
+                    process::exit(65);
+                }
             }
             TokenType::EOF => None,
             t => {
