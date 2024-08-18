@@ -1,4 +1,6 @@
 use std::fmt::Display;
+use std::io::{self, Write};
+use std::process;
 
 use crate::exprs::Expr;
 use crate::tokens::{Operator, TokenType};
@@ -17,14 +19,6 @@ impl Display for Value {
             Value::Bool(b) => write!(f, "{}", b),
             Value::Number(n) => write!(f, "{}", n),
             Value::String(s) => write!(f, "{}", s),
-            // Value::Grouping(g) => {
-            //     let g_j = g
-            //         .iter()
-            //         .map(|e| format!("{e}"))
-            //         .collect::<Vec<String>>()
-            //         .join(", ");
-            //     write!(f, "{}", g_j)
-            // }
         }
     }
 }
@@ -41,7 +35,7 @@ fn evaluate_expr(expr: &Expr) -> Result<Value, &'static str> {
             match operator.token_type {
                 TokenType::Minus => match res {
                     Value::Number(n) => Ok(Value::Number(-n)),
-                    _ => Err("Unsupported value for Minus token"),
+                    _ => Err("Operand must be a number."),
                 },
                 TokenType::Bang => match res {
                     Value::Bool(b) => Ok(Value::Bool(!b)),
@@ -120,7 +114,10 @@ pub fn evaluate_exprs(exprs: Vec<Option<Expr>>) {
                     println!("{value}");
                     Ok(())
                 })
-                .unwrap_or_else(|e| panic!("Evaluation failed: {}", e));
+                .unwrap_or_else(|e| {
+                    writeln!(io::stderr(), "{}", e).unwrap();
+                    process::exit(70)
+                });
         }
     }
 }
