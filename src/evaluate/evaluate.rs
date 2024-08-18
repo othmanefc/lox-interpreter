@@ -74,12 +74,37 @@ fn evaluate_expr(expr: &Expr) -> Result<Value, &'static str> {
                     TokenType::Operator {
                         op: Operator::GreaterEqual,
                     } => Ok(Value::Bool(n >= m)),
+                    TokenType::Operator {
+                        op: Operator::EqualEqual,
+                    } => Ok(Value::Bool(n == m)),
+                    TokenType::Operator {
+                        op: Operator::BangEqual,
+                    } => Ok(Value::Bool(n != m)),
                     _ => Err("Unsupported token type for binary expression on numbers"),
                 },
                 (Value::String(s), Value::String(t)) => match operator.token_type {
                     TokenType::Plus => Ok(Value::String(s + t.as_str())),
+                    TokenType::Operator {
+                        op: Operator::EqualEqual,
+                    } => Ok(Value::Bool(s == t)),
+                    TokenType::Operator {
+                        op: Operator::BangEqual,
+                    } => Ok(Value::Bool(s != t)),
                     _ => Err("Unsupported token type for binary expression on strings"),
                 },
+                (Value::Number(_), Value::String(_)) | (Value::String(_), Value::Number(_)) => {
+                    match operator.token_type {
+                        TokenType::Operator {
+                            op: Operator::EqualEqual,
+                        } => Ok(Value::Bool(false)),
+                        TokenType::Operator {
+                            op: Operator::BangEqual,
+                        } => Ok(Value::Bool(true)),
+                        _ => {
+                            Err("Unsupported token type for binary expression on string and number")
+                        }
+                    }
+                }
                 (_, _) => Err("Unsupported values for binary expression"),
             }
         } // _ => Err("Unsupported expression type"),
