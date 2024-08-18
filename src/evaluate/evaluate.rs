@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use crate::exprs::Expr;
-use crate::tokens::TokenType;
+use crate::tokens::{Operator, TokenType};
 
 enum Value {
     Nil,
@@ -66,6 +66,14 @@ fn evaluate_expr(expr: &Expr) -> Result<Value, &'static str> {
                     TokenType::Slash => Ok(Value::Number(n / m)),
                     TokenType::Plus => Ok(Value::Number(n + m)),
                     TokenType::Minus => Ok(Value::Number(n - m)),
+                    TokenType::Greater => Ok(Value::Bool(n > m)),
+                    TokenType::Less => Ok(Value::Bool(n < m)),
+                    TokenType::Operator {
+                        op: Operator::LessEqual,
+                    } => Ok(Value::Bool(n <= m)),
+                    TokenType::Operator {
+                        op: Operator::GreaterEqual,
+                    } => Ok(Value::Bool(n >= m)),
                     _ => Err("Unsupported token type for binary expression on numbers"),
                 },
                 (Value::String(s), Value::String(t)) => match operator.token_type {
