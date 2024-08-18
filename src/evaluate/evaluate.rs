@@ -66,7 +66,11 @@ fn evaluate_expr(expr: &Expr) -> Result<Value, &'static str> {
                     TokenType::Slash => Ok(Value::Number(n / m)),
                     TokenType::Plus => Ok(Value::Number(n + m)),
                     TokenType::Minus => Ok(Value::Number(n - m)),
-                    _ => Err("Unsupported token type for binary expression"),
+                    _ => Err("Unsupported token type for binary expression on numbers"),
+                },
+                (Value::String(s), Value::String(t)) => match operator.token_type {
+                    TokenType::Plus => Ok(Value::String(s + t.as_str())),
+                    _ => Err("Unsupported token type for binary expression on strings"),
                 },
                 (_, _) => Err("Unsupported values for binary expression"),
             }
