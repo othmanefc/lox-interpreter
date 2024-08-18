@@ -94,12 +94,16 @@ fn evaluate_expr(expr: &Expr) -> Result<Value, &'static str> {
                         TokenType::Operator {
                             op: Operator::BangEqual,
                         } => Ok(Value::Bool(true)),
+                        TokenType::Star | TokenType::Slash => Err("Operands must be numbers."),
                         _ => {
                             Err("Unsupported token type for binary expression on string and number")
                         }
                     }
                 }
-                (_, _) => Err("Unsupported values for binary expression"),
+                (_, _) => match operator.token_type {
+                    TokenType::Star | TokenType::Slash => Err("Operands must be numbers."),
+                    _ => Err("Unsupported"),
+                },
             }
         } // _ => Err("Unsupported expression type"),
     }
